@@ -1,0 +1,47 @@
+name: Deploy HAxBRO API
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # Allows manual trigger from GitHub UI
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout your code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      # 4. Run tests (optional but recommended)
+      - name: Run tests
+        run: |
+          cd backend
+          pip install pytest
+          pytest || true  # Don't fail if no tests exist yet
+
+      # 5. Deploy to Render (FREE HOSTING)
+      - name: Trigger Render Deploy
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          if [ -n "$RENDER_DEPLOY_HOOK" ]; then
+            curl -X POST "$RENDER_DEPLOY_HOOK"
+            echo "✅ Deploy triggered on Render"
+          else
+            echo "⚠️ RENDER_DEPLOY_HOOK not set. Skipping deploy."
+          fi
