@@ -46,12 +46,12 @@ body{margin:0;min-height:100vh;background:radial-gradient(circle at 70% 0%,#0733
 <section class="hero">
   <div class="eyebrow">HAXBRO · INDEPENDENT INTELLIGENCE</div>
   <h1>Own the core.</h1>
-  <p>KAI 51 now has a real browser-local language-model runtime behind its independent architecture. The model runs on the user's device; no OpenAI, Groq, Gemini or Anthropic API is used by this runtime.</p>
+  <p>KAI 51 now has a first-party KAI 51 runtime behind its independent architecture. The model runs on the user's device; no OpenAI, Groq, Gemini or Anthropic API is used by this runtime.</p>
   <div class="badges">
     <span class="badge">Provider · NONE</span>
     <span class="badge">Memory · LOCAL / 12</span>
-    <span class="badge">Model · Qwen3 0.6B ONNX</span>
-    <span class="badge">Runtime · WebGPU / WASM</span>
+    <span class="badge">Brain · First-party runtime</span>
+    <span class="badge">Runtime · Local JavaScript</span>
   </div>
 </section>
 
@@ -85,7 +85,7 @@ body{margin:0;min-height:100vh;background:radial-gradient(circle at 70% 0%,#0733
 </div>
 
 <script type="module">
-import { kai51 } from "./kai51/core.js";
+import { kai51 } from "./kai51/first-party-core.js";
 
 const nodes = document.querySelector("#nodes");
 const q = document.querySelector("#q");
