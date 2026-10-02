@@ -1,4 +1,4 @@
-name: KAI 51 validation
+name: KAI 51 first-party validation
 on:
   push:
     branches: ["**"]
@@ -11,6 +11,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: node --check kai51/core.js
+      - run: node --check kai51/first-party-core.js
+      - run: node --check kai51/capabilities.js
+      - run: node --check kai51/decoder.js
+      - run: node --check kai51/app-maker.js
       - run: test -f index.html
-      - run: test -f kai51/core.js
+      - run: grep -q 'externalModel:false' kai51/first-party-core.js
