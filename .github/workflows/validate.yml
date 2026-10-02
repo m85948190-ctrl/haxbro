@@ -1,0 +1,16 @@
+name: KAI 51 validation
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --check kai51/core.js
+      - run: test -f index.html
+      - run: test -f kai51/core.js
