@@ -1,5 +1,4 @@
 name: Build HAxBRO AI Model
-
 on:
   workflow_dispatch:
     inputs:
@@ -7,53 +6,37 @@ on:
         description: "Approved upstream model"
         required: true
         default: "HuggingFaceTB/SmolLM2-360M-Instruct"
-
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    permissions: {contents: write}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Install conversion tooling
+        with: {python-version: "3.11"}
+      - name: Install tooling
         run: |
           python -m pip install --upgrade pip
-          pip install "optimum[onnxruntime]" transformers onnx onnxruntime
+          pip install "optimum[onnxruntime]" transformers huggingface_hub
       - name: Download approved model
-        env:
-          MODEL_ID: ${{ inputs.model_id }}
+        env: {MODEL_ID: ${{ inputs.model_id }}}
         run: |
           python - <<'PY'
           import os
           from huggingface_hub import snapshot_download
-          model=os.environ["MODEL_ID"]
-          snapshot_download(model, local_dir="build/upstream")
-          print("Downloaded:", model)
+          snapshot_download(os.environ["MODEL_ID"], local_dir="build/upstream")
           PY
-      - name: Convert and quantize
-        env:
-          MODEL_ID: ${{ inputs.model_id }}
+      - name: Export optimized ONNX
+        run: optimum-cli export onnx --model build/upstream --task text-generation-with-past --optimize O3 build/kai51
+      - name: Quantize ONNX
         run: |
-          python -m scripts.convert --quantize --model_id build/upstream --output_dir build/kai51
-      - name: Package runtime manifest
+          optimum-cli onnxruntime quantize --onnx_model build/kai51 --avx2 -o build/kai51-quantized
+          cp build/kai51/*.json build/kai51-quantized/ 2>/dev/null || true
+      - name: Manifest
         run: |
-          cat > build/kai51/MODEL-MANIFEST.json <<'JSON'
-          {
-            "name": "HAxBRO AI Model",
-            "source": "HuggingFaceTB/SmolLM2-360M-Instruct",
-            "license": "Apache-2.0",
-            "format": "ONNX quantized",
-            "runtime": "Transformers.js / ONNX Runtime Web",
-            "primary_device": "WebGPU",
-            "fallback_device": "WASM"
-          }
-          JSON
-      - name: Publish model release
-        env:
-          GH_TOKEN: ${{ github.token }}
+          printf '%s\n' '{"name":"HAxBRO AI Model","source":"HuggingFaceTB/SmolLM2-360M-Instruct","license":"Apache-2.0","format":"ONNX optimized and quantized","runtime":"Transformers.js / ONNX Runtime Web","primary_device":"WebGPU","fallback_device":"WASM"}' > build/kai51-quantized/MODEL-MANIFEST.json
+      - name: Publish release
+        env: {GH_TOKEN: ${{ github.token }}}
         run: |
           tag="kai51-model-${{ github.run_number }}"
-          gh release create "$tag" build/kai51/** --title "HAxBRO AI Model $tag" --notes "Optimized/quantized artifacts for the approved Apache-2.0 source model. Verify artifact contents before production use."
+          gh release create "$tag" build/kai51-quantized/** --title "HAxBRO AI Model $tag" --notes "Optimized and quantized artifacts from the approved Apache-2.0 source model."
