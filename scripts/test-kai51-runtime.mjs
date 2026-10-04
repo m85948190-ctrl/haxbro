@@ -1,6 +1,6 @@
 import { env, pipeline } from "@huggingface/transformers";
 const host="https://github.com/m85948190-ctrl/haxbro/releases/download/kai51-model-latest";
-env.allowRemoteModels=true; env.allowLocalModels=false; env.remoteHost=host; env.remotePathTemplate="{model}/{file}";
+env.allowRemoteModels=true; env.allowLocalModels=false; env.remoteHost=host; env.remotePathTemplate="{file}";
 env.useBrowserCache=false; env.useFSCache=false;
 env.fetch=(input,init)=>{const raw=typeof input==="string"?input:input?.url||String(input);if(raw.startsWith(host+"/"))return fetch(host+"/"+raw.split("/").pop(),init);return fetch(input,init);};
 const device=process.env.KAI_DEVICE||"cpu";
