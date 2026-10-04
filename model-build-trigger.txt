@@ -1,1 +1,1 @@
-KAI 51 clean inference verification
+KAI 51 inspect raw output
