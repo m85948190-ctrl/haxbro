@@ -1,1 +1,1 @@
-KAI 51 inspect raw output
+KAI 51 chat-template generation verification
