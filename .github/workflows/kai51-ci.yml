@@ -1,0 +1,15 @@
+name: KAI 51 CI
+on:
+  push:
+    paths: ["kai51/**","creative/**","agent/**","knowledge/**","scripts/**","package.json",".github/workflows/kai51-ci.yml"]
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npm test
