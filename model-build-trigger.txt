@@ -1,1 +1,1 @@
-KAI 51 stable model build trigger - runtime verification enabled
+KAI 51 stable model build trigger - CPU runtime verification
