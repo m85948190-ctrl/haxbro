@@ -1,1 +1,1 @@
-KAI 51 GitHub asset inference verification v2
+KAI 51 final real inference verification - CPU CI
