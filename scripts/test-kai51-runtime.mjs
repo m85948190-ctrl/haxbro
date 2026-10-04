@@ -3,7 +3,7 @@ const host="https://github.com/m85948190-ctrl/haxbro/releases/download/kai51-mod
 env.allowRemoteModels=true; env.allowLocalModels=false; env.remoteHost=host; env.remotePathTemplate="{model}/{file}";
 env.useBrowserCache=false; env.useFSCache=false;
 env.fetch=(input,init)=>{const raw=typeof input==="string"?input:input?.url||String(input);if(raw.startsWith(host+"/"))return fetch(host+"/"+raw.split("/").pop(),init);return fetch(input,init);};
-const device=process.env.KAI_DEVICE||"wasm";
+const device=process.env.KAI_DEVICE||"cpu";
 const pipe=await pipeline("text-generation","haxbro-ai-model",{device,dtype:device==="webgpu"?"q4f16":"q4"});
 const output=await pipe("You are KAI 51, the core intelligence of HAxBRO AI. Answer briefly. Who are you and what is 2+2?",{max_new_tokens:48,do_sample:false,return_full_text:false});
 const item=Array.isArray(output)?output[0]:output;
