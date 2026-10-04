@@ -2,15 +2,9 @@ name: Build HAxBRO AI Model
 
 on:
   workflow_dispatch:
-    inputs:
-      model_id:
-        description: Approved upstream model
-        required: true
-        default: HuggingFaceTB/SmolLM2-360M-Instruct
   push:
     paths:
       - .github/workflows/build-kai51-model.yml
-      - scripts/prepare-kai51.mjs
       - model-build-trigger.txt
 
 permissions:
@@ -19,59 +13,57 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Checkout Transformers.js conversion tool
-        run: git clone --depth 1 https://github.com/huggingface/transformers.js.git build/transformersjs
-      - name: Install conversion toolchain
-        working-directory: build/transformersjs
+      - name: Install model packaging toolchain
         run: |
           python -m pip install --upgrade pip
-          pip install "optimum[onnxruntime]" transformers huggingface_hub
-      - name: Export browser-ready quantized model
-        env:
-          MODEL_ID: ${{ inputs.model_id || 'HuggingFaceTB/SmolLM2-360M-Instruct' }}
-        working-directory: build/transformersjs
+          pip install huggingface_hub
+      - name: Mirror verified browser-ready model
         run: |
-          python -m scripts.convert             --model_id "$MODEL_ID"             --task text-generation             --quantize             --modes q4 q4f16 q8             --output_parent_dir ../../build
+          rm -rf build/kai51-source build/kai51-release
+          python - <<'PY'
+          from huggingface_hub import snapshot_download
+          snapshot_download(
+              "onnx-community/SmolLM2-360M-Instruct-ONNX",
+              local_dir="build/kai51-source",
+              allow_patterns=[
+                  "config.json",
+                  "tokenizer.json",
+                  "tokenizer_config.json",
+                  "special_tokens_map.json",
+                  "generation_config.json",
+                  "chat_template.jinja",
+                  "onnx/model_q4.onnx",
+                  "onnx/model_q4f16.onnx"
+              ]
+          )
+          PY
       - name: Assemble stable release
         run: |
-          rm -rf build/kai51-release
           mkdir -p build/kai51-release
-          MODEL_DIR=$(find build -maxdepth 2 -type d -name 'SmolLM2-360M-Instruct' | head -1)
-          test -n "$MODEL_DIR"
-          cp "$MODEL_DIR/config.json" build/kai51-release/
-          cp "$MODEL_DIR/tokenizer.json" build/kai51-release/ 2>/dev/null || true
-          cp "$MODEL_DIR/tokenizer_config.json" build/kai51-release/ 2>/dev/null || true
-          cp "$MODEL_DIR/special_tokens_map.json" build/kai51-release/ 2>/dev/null || true
-          cp "$MODEL_DIR/generation_config.json" build/kai51-release/ 2>/dev/null || true
-          cp "$MODEL_DIR/chat_template.jinja" build/kai51-release/ 2>/dev/null || true
-          cp "$MODEL_DIR/onnx/model_q4.onnx" build/kai51-release/ 2>/dev/null || true
-          cp "$MODEL_DIR/onnx/model_q4f16.onnx" build/kai51-release/ 2>/dev/null || true
-          cp "$MODEL_DIR/onnx/model_q8.onnx" build/kai51-release/ 2>/dev/null || true
-          test -f build/kai51-release/config.json
-          test -f build/kai51-release/onnx/model_q4.onnx || test -f build/kai51-release/model_q4.onnx
-          printf '%s\n' '{"name":"HAxBRO AI Model","runtime":"Transformers.js / ONNX Runtime Web","source_model":"HuggingFaceTB/SmolLM2-360M-Instruct","source_license":"Apache-2.0","format":"Transformers.js ONNX q4/q4f16/q8","architecture":"single-core-orchestrator","primary_device":"WebGPU","fallback_device":"WASM","release_tag":"kai51-model-latest"}' > build/kai51-release/MODEL-MANIFEST.json
-      - name: Flatten ONNX payload
+          cp build/kai51-source/config.json build/kai51-release/
+          cp build/kai51-source/tokenizer.json build/kai51-release/ 2>/dev/null || true
+          cp build/kai51-source/tokenizer_config.json build/kai51-release/ 2>/dev/null || true
+          cp build/kai51-source/special_tokens_map.json build/kai51-release/ 2>/dev/null || true
+          cp build/kai51-source/generation_config.json build/kai51-release/ 2>/dev/null || true
+          cp build/kai51-source/chat_template.jinja build/kai51-release/ 2>/dev/null || true
+          cp build/kai51-source/onnx/model_q4.onnx build/kai51-release/model_q4.onnx
+          cp build/kai51-source/onnx/model_q4f16.onnx build/kai51-release/model_q4f16.onnx
+          printf '%s\n' '{"name":"HAxBRO AI Model","runtime":"Transformers.js / ONNX Runtime Web","source_model":"HuggingFaceTB/SmolLM2-360M-Instruct","source_onnx":"onnx-community/SmolLM2-360M-Instruct-ONNX","source_license":"Apache-2.0","format":"browser-ready ONNX q4 + q4f16","architecture":"single-core-orchestrator","primary_device":"WebGPU","fallback_device":"WASM","release_tag":"kai51-model-latest"}' > build/kai51-release/MODEL-MANIFEST.json
+      - name: Verify release payload
         run: |
-          if [ -f build/kai51-release/onnx/model_q4.onnx ]; then
-            mv build/kai51-release/onnx/model_q4.onnx build/kai51-release/model_q4.onnx
-          fi
-          if [ -f build/kai51-release/onnx/model_q4f16.onnx ]; then
-            mv build/kai51-release/onnx/model_q4f16.onnx build/kai51-release/model_q4f16.onnx
-          fi
-          if [ -f build/kai51-release/onnx/model_q8.onnx ]; then
-            mv build/kai51-release/onnx/model_q8.onnx build/kai51-release/model_q8.onnx
-          fi
-          rmdir build/kai51-release/onnx 2>/dev/null || true
-      - name: Replace stable model release
+          test -s build/kai51-release/config.json
+          test -s build/kai51-release/model_q4.onnx
+          test -s build/kai51-release/model_q4f16.onnx
+      - name: Replace stable GitHub model release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete kai51-model-latest --yes || true
           git push origin :refs/tags/kai51-model-latest || true
-          gh release create kai51-model-latest build/kai51-release/*             --title "HAxBRO AI Model - Stable"             --notes "HAxBRO browser-ready model artifacts. Source: HuggingFaceTB/SmolLM2-360M-Instruct (Apache-2.0). Converted with Transformers.js tooling."
+          gh release create kai51-model-latest build/kai51-release/*             --title "HAxBRO AI Model - Stable"             --notes "HAxBRO browser-ready model package. Upstream source: HuggingFaceTB/SmolLM2-360M-Instruct. Browser ONNX conversion source: onnx-community/SmolLM2-360M-Instruct-ONNX. Apache-2.0."
