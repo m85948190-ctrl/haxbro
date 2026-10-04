@@ -1,0 +1,59 @@
+name: Build HAxBRO AI Model
+
+on:
+  workflow_dispatch:
+    inputs:
+      model_id:
+        description: "Approved upstream model"
+        required: true
+        default: "HuggingFaceTB/SmolLM2-360M-Instruct"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install conversion tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install "optimum[onnxruntime]" transformers onnx onnxruntime
+      - name: Download approved model
+        env:
+          MODEL_ID: ${{ inputs.model_id }}
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import snapshot_download
+          model=os.environ["MODEL_ID"]
+          snapshot_download(model, local_dir="build/upstream")
+          print("Downloaded:", model)
+          PY
+      - name: Convert and quantize
+        env:
+          MODEL_ID: ${{ inputs.model_id }}
+        run: |
+          python -m scripts.convert --quantize --model_id build/upstream --output_dir build/kai51
+      - name: Package runtime manifest
+        run: |
+          cat > build/kai51/MODEL-MANIFEST.json <<'JSON'
+          {
+            "name": "HAxBRO AI Model",
+            "source": "HuggingFaceTB/SmolLM2-360M-Instruct",
+            "license": "Apache-2.0",
+            "format": "ONNX quantized",
+            "runtime": "Transformers.js / ONNX Runtime Web",
+            "primary_device": "WebGPU",
+            "fallback_device": "WASM"
+          }
+          JSON
+      - name: Publish model release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="kai51-model-${{ github.run_number }}"
+          gh release create "$tag" build/kai51/** --title "HAxBRO AI Model $tag" --notes "Optimized/quantized artifacts for the approved Apache-2.0 source model. Verify artifact contents before production use."
