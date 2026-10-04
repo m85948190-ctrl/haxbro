@@ -1,0 +1,1 @@
+export function createWebLane({search,scrape}){return{async run(query){const hits=await search(query);const sources=Array.isArray(hits)?hits.slice(0,5):[];return{sources:await Promise.all(sources.map(async item=>{try{return{...item,content:await scrape(item.url)}}catch{return item}}))}}}}
