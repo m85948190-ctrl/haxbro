@@ -1,0 +1,1 @@
+import {execFileSync} from "node:child_process";const model=process.env.MODEL_ID||"HuggingFaceTB/SmolLM2-360M-Instruct";execFileSync("python",["-m","scripts.convert","--quantize","--model_id",model],{stdio:"inherit"});console.log("Prepared ONNX/quantized artifacts for",model);
