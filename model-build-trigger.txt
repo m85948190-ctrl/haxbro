@@ -1,1 +1,1 @@
-KAI 51 stable model build trigger - CPU runtime verification
+KAI 51 inference path fix - verify real generation
