@@ -25,5 +25,5 @@ const output=await pipe(
 );
 const item=Array.isArray(output)?output[0]:output;
 const answer=String(item?.generated_text??item?.text??"").trim();
-if(!answer) throw new Error("KAI 51 returned an empty response");
+console.log("RAW_OUTPUT",JSON.stringify(output));\nif(!answer) throw new Error("KAI 51 returned an empty response");
 console.log(JSON.stringify({ok:true,source:"GitHub Release",answer}));
