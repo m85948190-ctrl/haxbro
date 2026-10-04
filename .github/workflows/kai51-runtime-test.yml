@@ -1,0 +1,25 @@
+name: KAI 51 Runtime Test
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Build HAxBRO AI Model"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  inference:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install runtime
+        run: npm install --no-save @huggingface/transformers@4.3.0
+      - name: Run real KAI 51 inference
+        run: node scripts/test-kai51-runtime.mjs
