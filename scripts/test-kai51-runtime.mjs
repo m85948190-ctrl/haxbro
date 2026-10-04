@@ -2,12 +2,12 @@ import {env,pipeline} from "@huggingface/transformers";
 import {mkdir,writeFile} from "node:fs/promises";
 
 const base="https://github.com/m85948190-ctrl/haxbro/releases/download/kai51-model-latest";
-const dir="build/kai51-model";
+const dir="build/kai51-model";\nawait mkdir(dir+"/onnx",{recursive:true});
 await mkdir(dir,{recursive:true});
 for(const file of ["config.json","tokenizer.json","tokenizer_config.json","special_tokens_map.json","generation_config.json","model_q4.onnx"]){
   const res=await fetch(base+"/"+file);
   if(!res.ok) throw new Error("GitHub model asset failed: "+file+" HTTP "+res.status);
-  await writeFile(dir+"/"+file,Buffer.from(await res.arrayBuffer()));
+  await writeFile(file.endsWith(".onnx") ? dir+"/onnx/"+file : dir+"/"+file,Buffer.from(await res.arrayBuffer()));
 }
 env.allowRemoteModels=false;
 env.allowLocalModels=true;
