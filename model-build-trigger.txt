@@ -1,1 +1,1 @@
-KAI 51 final real inference verification - CPU CI
+KAI 51 final inference path correction
