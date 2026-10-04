@@ -31,7 +31,7 @@ jobs:
         working-directory: build/transformersjs
         run: |
           python -m pip install --upgrade pip
-          pip install -r scripts/requirements.txt
+          pip install "optimum[onnxruntime]" transformers huggingface_hub
       - name: Export browser-ready quantized model
         env:
           MODEL_ID: ${{ inputs.model_id || 'HuggingFaceTB/SmolLM2-360M-Instruct' }}
