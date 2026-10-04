@@ -28,7 +28,7 @@ export async function loadKAI51({onProgress=()=>{}}={}){
     env.useBrowserCache=KAI51_CONFIG.useBrowserCache;
     env.cacheKey=KAI51_CONFIG.cacheKey;
     env.remoteHost=KAI51_CONFIG.modelHost;
-    env.remotePathTemplate="{model}/{file}";
+    env.remotePathTemplate="{file}";
     env.fetch=releaseFetch;
 
     const device=await chooseDevice();
