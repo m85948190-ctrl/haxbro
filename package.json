@@ -1,0 +1,1 @@
+{"name":"haxbro-ai-core","private":true,"type":"module","scripts":{"test":"node --test","prepare:kai51":"node scripts/prepare-kai51.mjs"},"dependencies":{"@huggingface/transformers":"^4.3.0"}}
