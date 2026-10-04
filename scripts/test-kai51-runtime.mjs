@@ -19,11 +19,19 @@ env.useBrowserCache=false;
 env.useFSCache=false;
 
 const pipe=await pipeline("text-generation","kai51-model",{device:"cpu",dtype:"q4"});
-const output=await pipe(
-  "You are KAI 51, the core intelligence of HAxBRO AI. Answer briefly. Who are you and what is 2+2?",
-  {max_new_tokens:48,do_sample:false,return_full_text:false}
-);
+const messages=[
+  {role:"system",content:"You are KAI 51, the core intelligence of HAxBRO AI. Be concise, helpful, and answer the user directly."},
+  {role:"user",content:"Who are you and what is 2+2?"}
+];
+const output=await pipe(messages,{max_new_tokens:64,do_sample:false});
+console.log("RAW_OUTPUT",JSON.stringify(output));
+
 const item=Array.isArray(output)?output[0]:output;
-const answer=String(item?.generated_text??item?.text??"").trim();
-console.log("RAW_OUTPUT",JSON.stringify(output));\nif(!answer) throw new Error("KAI 51 returned an empty response");
+let answer="";
+if(typeof item?.generated_text==="string") answer=item.generated_text;
+else if(Array.isArray(item?.generated_text)){
+  const last=item.generated_text.at(-1);
+  answer=typeof last==="string"?last:String(last?.content??"");
+}
+if(!answer) throw new Error("KAI 51 returned an empty response");
 console.log(JSON.stringify({ok:true,source:"GitHub Release",answer}));
