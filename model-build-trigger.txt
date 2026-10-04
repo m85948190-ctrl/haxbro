@@ -1,1 +1,1 @@
-KAI 51 inference path fix - verify real generation
+KAI 51 GitHub asset inference verification v2
