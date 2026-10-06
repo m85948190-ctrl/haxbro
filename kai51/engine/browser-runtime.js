@@ -45,9 +45,11 @@ export async function loadKAI51({onProgress=()=>{}}={}){
     return {
       device,
       async generate({prompt,history=[]}){
-        const messages=[{role:"system",content:"You are KAI 51, the core intelligence of HAxBRO AI. Be concise, helpful, accurate, and answer the user directly."},...history.slice(-KAI51_CONFIG.context.maxMessages),{{
-          role:"user",content:String(prompt).slice(0,KAI51_CONFIG.context.maxPromptChars)
-        }]);
+        const messages=[
+          {role:"system",content:"You are KAI 51, the core intelligence of HAxBRO AI. Be concise, helpful, accurate, and answer the user directly."},
+          ...history.slice(-KAI51_CONFIG.context.maxMessages),
+          {role:"user",content:String(prompt).slice(0,KAI51_CONFIG.context.maxPromptChars)}
+        ];
         const out=await pipe(messages,KAI51_CONFIG.generation);
         const item=Array.isArray(out)?out[0]:out;
         const generated=item && item.generated_text;
