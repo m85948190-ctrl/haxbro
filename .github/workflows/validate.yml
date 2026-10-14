@@ -17,3 +17,13 @@ jobs:
       - run: node --check kai51/app-maker.js
       - run: test -f index.html
       - run: grep -q 'externalModel:false' kai51/first-party-core.js
+      - name: Syntax-check browser inference script
+        run: |
+          node --input-type=module -e 'import fs from "node:fs"; const html=fs.readFileSync("index.html","utf8"); const m=html.match(/<script>([\\s\\S]*?)<\\/script>/); if(!m) throw new Error("Inline app script missing"); fs.writeFileSync("/tmp/haxbro-index-script.mjs",m[1]);'
+          node --check /tmp/haxbro-index-script.mjs
+      - name: Assert actual neural model lanes
+        run: |
+          grep -q 'onnx-community/SmolLM2-135M-Instruct-ONNX' index.html
+          grep -q 'HuggingFaceTB/SmolLM2-360M-Instruct' index.html
+          grep -q 'which==="lite"||shouldSearch(q)' index.html
+          ! grep -q 'modelId="haxbro-ai-model"' index.html
