@@ -19,7 +19,7 @@ jobs:
       - run: grep -q 'externalModel:false' kai51/first-party-core.js
       - name: Syntax-check browser inference script
         run: |
-          node --input-type=module -e 'import fs from "node:fs"; const html=fs.readFileSync("index.html","utf8"); const a=html.indexOf("<script>"); const b=html.lastIndexOf("</script>"); if(a<0||b<a) throw new Error("Inline app script missing"); fs.writeFileSync("/tmp/haxbro-index-script.mjs",html.slice(a+8,b));'
+          node --input-type=module -e 'import fs from "node:fs"; const html=fs.readFileSync("index.html","utf8"); const a=html.indexOf("<script"); const start=html.indexOf(">",a)+1; const b=html.lastIndexOf("</script>"); if(a<0||start<=0||b<start) throw new Error("Inline app script missing"); fs.writeFileSync("/tmp/haxbro-index-script.mjs",html.slice(start,b));'
           node --check /tmp/haxbro-index-script.mjs
       - name: Assert actual neural model lanes
         run: |
