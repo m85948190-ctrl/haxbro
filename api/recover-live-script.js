@@ -1,0 +1,3 @@
+export const access='public';
+export const methods=['GET'];
+export default async function(req,res){const offset=Math.max(0,Number(req.query?.offset||0));const limit=Math.min(7000,Math.max(1,Number(req.query?.limit||7000)));const r=await fetch('https://haxbro.hatchable.site/script.js');if(!r.ok)return res.status(502).json({error:'live script fetch failed',status:r.status});const text=await r.text();res.json({offset,limit,total:text.length,chunk:text.slice(offset,offset+limit),done:offset+limit>=text.length});}
