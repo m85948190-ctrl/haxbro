@@ -1,0 +1,55 @@
+name: Import OpenMontage source
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_import:
+        description: "Type IMPORT to copy the full OpenMontage source into vendor/OpenMontage"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: import-openmontage-source
+  cancel-in-progress: false
+
+jobs:
+  import-source:
+    if: ${{ inputs.confirm_import == 'IMPORT' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out HAxBRO
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch complete OpenMontage source snapshot
+        run: |
+          git clone --depth 1 https://github.com/calesthio/OpenMontage.git /tmp/OpenMontage
+          mkdir -p vendor/OpenMontage
+          cp -a /tmp/OpenMontage/. vendor/OpenMontage/
+          rm -rf vendor/OpenMontage/.git
+
+      - name: Verify source license and project files
+        run: |
+          test -f vendor/OpenMontage/LICENSE
+          test -f vendor/OpenMontage/README.md
+          test -d vendor/OpenMontage/tools
+          echo "OpenMontage source files copied:"
+          find vendor/OpenMontage -type f | wc -l
+          echo "License:"
+          head -n 8 vendor/OpenMontage/LICENSE
+
+      - name: Commit the imported source snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add vendor/OpenMontage
+          if git diff --cached --quiet; then
+            echo "OpenMontage source is already up to date."
+            exit 0
+          fi
+          git commit -m "vendor: import OpenMontage source snapshot (AGPL-3.0)"
+          git push origin HEAD:${GITHUB_REF_NAME}
