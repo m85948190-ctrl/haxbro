@@ -1,0 +1,5 @@
+import { events } from 'hatchable';
+import { complete } from 'lib/core';
+export const access='scheduler';
+export const methods=['POST'];
+export default async function(req,res){const b=req.body||{};const job=String(b.jobId||'').trim();if(!job)return res.status(400).json({error:'jobId required'});const channel='kai:'+job;const publish=payload=>events.publish(channel,'activity',payload).catch(()=>{});await publish({type:'connected',label:'KAI 51 · LIVE',detail:'KAI execution started'});try{const result=await complete({system:'You are HAxBRO. Answer naturally and directly.',prompt:String(b.message||''),maxTokens:1200,username:String(b.username||''),history:String(b.history||''),memory:String(b.kaiMemory||''),modelChoice:'kai',onEvent:event=>publish(event)});await publish({type:'complete',result});return res.json({ok:true});}catch(e){await publish({type:'error',message:String(e?.message||e||'KAI failed')});return res.status(500).json({ok:false,error:'KAI failed'});}}
