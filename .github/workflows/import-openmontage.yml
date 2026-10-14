@@ -1,6 +1,10 @@
 name: Import OpenMontage source
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/import-openmontage.yml"
   workflow_dispatch:
     inputs:
       confirm_import:
@@ -17,7 +21,7 @@ concurrency:
 
 jobs:
   import-source:
-    if: ${{ inputs.confirm_import == 'IMPORT' }}
+    if: ${{ github.event_name == 'push' || inputs.confirm_import == 'IMPORT' }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out HAxBRO
