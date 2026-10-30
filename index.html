@@ -84,7 +84,7 @@ async function retrieve(q){
   searchStatus.textContent="Read "+(data.research?.readCount||0)+" of "+(data.research?.searchedCount||searchCache.length)+" relevant webpages; "+(data.research?.failedCount||0)+" could not be fully read.";\n  return searchCache.map((s,i)=>"["+ (i+1)+"] "+s.title+" ("+s.url+") ["+(s.readStatus||"unknown")+"]\n"+(s.text||s.snippet||"")).join("\n\n").slice(0,11000);
  }catch(e){searchStatus.textContent="Web retrieval unavailable this pass: "+String(e.message||e);return "";}
 }
-function shouldSearch(q){return /\b(what|who|when|where|why|how|explain|research|source|latest|today|current|history|define|meaning|compare|verify|search|web)\b/i.test(q)&&!/^what\s*\??$/i.test(q);}
+function shouldSearch(q){const s=String(q||"").trim().toLowerCase();if(!s)return false;if(/^(hi|hello|hey|good morning|good afternoon|good evening|thanks|thank you|bye|goodbye)[!. ]*$/.test(s))return false;if(/^(who are you|what are you|what is kai|what can you do|show memory|my memory)\b/.test(s)||/^remember\s+/.test(s))return false;if(/^(?:what is|calculate|compute|solve)?\s*[0-9][0-9+\-*/().%\s]*\??$/.test(s))return false;return true;}
 async function run(){
  const q=clean(prompt.value);if(!q||send.disabled)return;prompt.value="";prompt.style.height="44px";send.disabled=true;send.textContent="…";send.setAttribute("aria-busy","true");
  bubble("YOU",q);const reply=bubble("KAI 51","Thinking…");const out=reply.lastChild;
