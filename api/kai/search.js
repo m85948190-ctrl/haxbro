@@ -1,4 +1,4 @@
-export const config = { runtime: "nodejs", maxDuration: 25 };
+export const config = { runtime: "nodejs", maxDuration: 15 };
 
 const clean=(v,n=500)=>String(v??"").replace(/[\u0000-\u001f]/g," ").replace(/\s+/g," ").trim().slice(0,n);
 const decodeEntities=s=>String(s||"")
@@ -87,7 +87,7 @@ function pageText(html){
  const title=clean(strip((String(html).match(/<title[^>]*>([\s\S]*?)<\/title>/i)||[])[1]||""),220);
  const candidates=[...String(html).matchAll(/<(main|article)[^>]*>([\s\S]*?)<\/\1>/gi)].map(x=>x[2]);
  const body=(candidates.join(" ")||((String(html).match(/<body[^>]*>([\s\S]*?)<\/body>/i)||[])[1]||html));
- const text=clean(strip(body),4200);
+ const text=clean(strip(body),2200);
  return {title,text};
 }
 async function scrape(source){
