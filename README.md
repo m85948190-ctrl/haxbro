@@ -1,1 +1,16 @@
 # KAI 51 — HAxBRO First-Party Core\n\nThis repository contains the HAxBRO-owned KAI 51 runtime and capability architecture.\n\n## Independence\n\nKAI 51 here does **not** load or call a hosted AI model.\n\n- No OpenAI\n- No Groq\n- No Gemini\n- No Anthropic\n- No Transformers.js model download\n- No ONNX model download\n- No provider API key\n- No external model dependency\n\nThe implemented intelligence is repository-owned software: routing, capability execution, local memory, deterministic tools, decoding and native app compilation.\n\n## Capability graph\n\nIdentity → Memory → Context → Planner → Reasoner → Tools → Research → App Maker → Code Writer → Project Maker → GodEngine → AI Control Panel → Decoding Partner → Security → Study → Web → Media → Workspace → Verifier → Recovery.\n\n## First-party engines\n\n- kai51/first-party-core.js — KAI identity, routing, memory and orchestration.\n- kai51/app-maker.js — deterministic native App Maker compiler with real HTML/CSS/JS output.\n- kai51/decoder.js — 25-key local decoding engine and test suite.\n- kai51/capabilities.js — KAI capability registry.\n\nApp Maker flow: **Intent → Architect → Build → Test → Preview → Modify/Publish**\n\n## Local memory\n\nThe runtime keeps the latest 12 entries in browser localStorage under a KAI-owned namespace. No hosted model memory is used.\n\n## HTML\n\nindex.html imports the first-party core directly and provides local KAI requests, the capability graph, local memory commands, native App Maker generation, generated-app preview, and provider/model status showing **none**.\n\n## Technical boundary\n\nA deterministic software runtime is not the same thing as a trained foundation model. This repository does not hide that distinction. KAI 51's identity and execution architecture are first-party here; a future learned model would require its weights and runtime to be intentionally brought into the repository itself.
+
+## Web-grounded KAI research
+
+The KAI chat research path uses the server-side `api/kai/search.js` handler to:
+
+1. Search Google, Bing and Wikipedia in parallel.
+2. Rank and deduplicate relevant results.
+3. Open up to five public HTTPS result pages.
+4. Extract readable article/main/body text while removing scripts, navigation, forms and footer noise.
+5. Return per-source read status and extracted text to the browser-local Hugging Face model.
+6. Ask KAI to synthesize across sources, distinguish agreement from conflicts, and cite factual claims with source numbers.
+
+The browser chat performs web research for non-trivial knowledge questions. Greetings, identity/memory commands and simple arithmetic stay local. If pages cannot be read, the response must not claim that they were fully inspected.
+
+The research handler is a Node server endpoint; a static GitHub Pages deployment alone cannot execute it. It must be hosted by a compatible Node backend and the HAxBRO frontend must route `/api/kai/search` to that backend. No AI-provider API key is used by this flow.
