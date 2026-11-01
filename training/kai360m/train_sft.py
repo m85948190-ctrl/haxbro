@@ -95,6 +95,9 @@ def main():
     print(f"Training device: {device}; dtype={dtype}")
     model=AutoModelForCausalLM.from_pretrained(a.base_model,revision=a.revision,torch_dtype=dtype,low_cpu_mem_usage=True)
     model.config.use_cache=False; model.gradient_checkpointing_enable()
+    # With re-entrant gradient checkpointing, ensure embedding outputs participate in autograd
+    # so LoRA parameters receive gradients even though the base weights are frozen.
+    if hasattr(model,"enable_input_require_grads"): model.enable_input_require_grads()
     lora=LoraConfig(task_type=TaskType.CAUSAL_LM,r=a.lora_r,lora_alpha=a.lora_alpha,lora_dropout=a.lora_dropout,
       target_modules=["q_proj","k_proj","v_proj","o_proj","gate_proj","up_proj","down_proj"],bias="none")
     model=get_peft_model(model,lora); model.print_trainable_parameters()
