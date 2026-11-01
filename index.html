@@ -37,7 +37,7 @@ button,input,textarea,select{font:inherit}button{cursor:pointer}button:disabled{
 import {kai51} from "./kai51/first-party-core.js";
 const $=s=>document.querySelector(s);
 const log=$("#chatlog"),prompt=$("#prompt"),send=$("#send"),lane=$("#lane"),topStatus=$("#topStatus"),laneChip=$("#laneChip"),hint=$("#hint"),bar=$("#bar"),progressText=$("#progressText"),modelName=$("#modelName"),modelDetail=$("#modelDetail"),sourcesBox=$("#sources"),searchStatus=$("#searchStatus");
-let pipe=null,pipeLane=null,loading=null,history=[],searchCache=[],laneEpoch=0;
+let pipe=null,pipeLane=null,loading=null,history=[],searchCache=[],laneEpoch=0,streamerClass=null;
 const clean=(s,n=2200)=>String(s||"").trim().slice(0,n);
 function bubble(who,text){const d=document.createElement("div");d.className="bubble "+(who==="YOU"?"user":"assistant");const h=document.createElement("div");h.className="who";h.textContent=who;const t=document.createElement("div");t.textContent=text;d.append(h,t);log.append(d);log.scrollTop=log.scrollHeight;return d;}
 function progress(p,label){const n=Math.max(0,Math.min(100,Number(p)||0));bar.style.width=n+"%";progressText.textContent=Math.round(n)+"% · "+label;hint.textContent=label;}
@@ -48,7 +48,7 @@ async function getPipe(which){
  const promise=(async()=>{
   progress(2,"Loading the local neural runtime…");topStatus.textContent="KAI 51 · loading model";
   const mod=await import("https://esm.sh/@huggingface/transformers@3.8.1");
-  const {pipeline,env,TextStreamer}=mod;
+  const {pipeline,env,TextStreamer}=mod;streamerClass=TextStreamer;
   env.allowRemoteModels=true;env.allowLocalModels=false;env.useBrowserCache=true;
   const heavy=which==="heavy";
   const modelId=heavy?"onnx-community/SmolLM2-360M-Instruct-ONNX":"onnx-community/SmolLM2-135M-Instruct-ONNX";
@@ -103,7 +103,7 @@ async function run(){
   const messages=[{role:"system",content:system},...history.slice(-8),{role:"user",content:userContent}];
   progress(100,"KAI 51 is generating with SmolLM2 "+(modelLane==="heavy"?"360M":"135M")+"…");
   let streamed="";
-  const streamer=typeof TextStreamer==="function"?new TextStreamer(p.tokenizer,{
+  const streamer=typeof streamerClass==="function"?new streamerClass(p.tokenizer,{
    skip_prompt:true,
    callback_function:chunk=>{streamed+=String(chunk||"");if(streamed.trim()){out.textContent=streamed;log.scrollTop=log.scrollHeight;}}
   }):undefined;
