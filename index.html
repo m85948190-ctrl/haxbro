@@ -47,7 +47,7 @@ async function getPipe(which){
  const epoch=laneEpoch;
  const promise=(async()=>{
   progress(2,"Loading the local neural runtime…");topStatus.textContent="KAI 51 · loading model";
-  const mod=await import("https://esm.sh/@huggingface/transformers@3.8.1");
+  const mod=await import("https://esm.sh/@huggingface/transformers@4.3.0");
   const {pipeline,env,TextStreamer}=mod;streamerClass=TextStreamer;
   env.allowRemoteModels=true;env.allowLocalModels=false;env.useBrowserCache=true;
   const heavy=which==="heavy";
@@ -94,7 +94,7 @@ async function run(){
  prompt.value="";prompt.style.height="44px";send.disabled=true;send.textContent="…";send.setAttribute("aria-busy","true");
  bubble("YOU",q);const reply=bubble("KAI 51","Preparing your answer…");const out=reply.lastChild;
  try{
-  const modelLane=lane.value==="heavy"?"heavy":"local";
+  const modelLane=lane.value;
   const evidenceTask=shouldSearch(q)?retrieve(q):Promise.resolve("");
   const modelTask=getPipe(modelLane);
   const [evidence,p]=await Promise.all([evidenceTask,modelTask]);
@@ -120,7 +120,7 @@ async function run(){
   history.push({role:"user",content:q},{role:"assistant",content:answer});history=history.slice(-12);
   try{localStorage.setItem("haxbro:kai51:chat:v1",JSON.stringify(history));}catch{}
   topStatus.textContent="KAI 51 · "+(modelLane==="heavy"?"360M":"135M")+" inference complete";
-  laneChip.textContent=(modelLane==="heavy"?"HEAVY 360M":"LOCAL 135M")+" · INFERRED";
+  laneChip.textContent=(modelLane==="heavy"?"HEAVY 360M":modelLane==="lite"?"LITE 135M":"LOCAL 135M")+" · INFERRED";
   hint.textContent="Neural inference completed in this browser. Conversation saved locally on this device.";
  }catch(e){
   out.textContent="I couldn't complete neural inference: "+String(e?.message||e)+". This is a real model/runtime failure, not a successful answer. Retry or switch to the 135M lane.";
