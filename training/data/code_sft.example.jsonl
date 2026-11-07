@@ -1,0 +1,4 @@
+{"instruction":"Write a JavaScript function named add that returns the sum of two numbers.","input":"","output":"function add(a, b) {\\n  return a + b;\\n}"}
+{"instruction":"Write a Python function that returns the largest number in a non-empty list.","input":"","output":"def largest(values):\\n    if not values:\\n        raise ValueError('values must not be empty')\\n    return max(values)"}
+{"instruction":"Fix the bug in this JavaScript function and explain the correction.","input":"function isEven(n) { return n % 2 === 1; }","output":"The condition is reversed. Even numbers have a remainder of 0 when divided by 2:\\n\\nfunction isEven(n) {\\n  return n % 2 === 0;\\n}"}
+{"instruction":"Write a Python function that safely parses a JSON string and returns None for invalid JSON.","input":"","output":"import json\\n\\ndef safe_json_loads(value):\\n    try:\\n        return json.loads(value)\\n    except (TypeError, json.JSONDecodeError):\\n        return None"}

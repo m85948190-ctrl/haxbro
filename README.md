@@ -1,16 +1,31 @@
-# KAI 51 — HAxBRO First-Party Core\n\nThis repository contains the HAxBRO-owned KAI 51 runtime and capability architecture.\n\n## Independence\n\nKAI 51 here does **not** load or call a hosted AI model.\n\n- No OpenAI\n- No Groq\n- No Gemini\n- No Anthropic\n- No Transformers.js model download\n- No ONNX model download\n- No provider API key\n- No external model dependency\n\nThe implemented intelligence is repository-owned software: routing, capability execution, local memory, deterministic tools, decoding and native app compilation.\n\n## Capability graph\n\nIdentity → Memory → Context → Planner → Reasoner → Tools → Research → App Maker → Code Writer → Project Maker → GodEngine → AI Control Panel → Decoding Partner → Security → Study → Web → Media → Workspace → Verifier → Recovery.\n\n## First-party engines\n\n- kai51/first-party-core.js — KAI identity, routing, memory and orchestration.\n- kai51/app-maker.js — deterministic native App Maker compiler with real HTML/CSS/JS output.\n- kai51/decoder.js — 25-key local decoding engine and test suite.\n- kai51/capabilities.js — KAI capability registry.\n\nApp Maker flow: **Intent → Architect → Build → Test → Preview → Modify/Publish**\n\n## Local memory\n\nThe runtime keeps the latest 12 entries in browser localStorage under a KAI-owned namespace. No hosted model memory is used.\n\n## HTML\n\nindex.html imports the first-party core directly and provides local KAI requests, the capability graph, local memory commands, native App Maker generation, generated-app preview, and provider/model status showing **none**.\n\n## Technical boundary\n\nA deterministic software runtime is not the same thing as a trained foundation model. This repository does not hide that distinction. KAI 51's identity and execution architecture are first-party here; a future learned model would require its weights and runtime to be intentionally brought into the repository itself.
+# HAxBRO AI — KAI 51
 
-## Web-grounded KAI research
+HAxBRO's browser-local AI workspace. The active conversational model is Qwen3-0.6B running through Transformers.js and ONNX Runtime Web.
 
-The KAI chat research path uses the server-side `api/kai/search.js` handler to:
+## Active model
+- Upstream: `Qwen/Qwen3-0.6B`
+- Browser ONNX: `onnx-community/Qwen3-0.6B-ONNX`
+- Parameter class: 0.6B
+- License: Apache-2.0 (see upstream model card)
+- Browser execution: WebGPU q4f16 when available; WASM q4 otherwise.
+- Installation starts automatically when the workspace opens; browser caching is enabled.
+- Normal conversation and code-generation prompts use the same local Qwen3 model with different system instructions.
 
-1. Search Google, Bing and Wikipedia in parallel.
-2. Rank and deduplicate relevant results.
-3. Open up to five public HTTPS result pages.
-4. Extract readable article/main/body text while removing scripts, navigation, forms and footer noise.
-5. Return per-source read status and extracted text to the browser-local Hugging Face model.
-6. Ask KAI to synthesize across sources, distinguish agreement from conflicts, and cite factual claims with source numbers.
+## Web and knowledge tools
+`api/kai/search.js` searches Google, Bing and Wikipedia, ranks/deduplicates results, opens public HTTPS pages and extracts readable article text. The browser passes evidence to Qwen3 and displays source links. If retrieval fails or no relevant readable pages are found, KAI must say it could not verify the information rather than fabricate sources.
 
-The browser chat performs web research for non-trivial knowledge questions. Greetings, identity/memory commands and simple arithmetic stay local. If pages cannot be read, the response must not claim that they were fully inspected.
+## Code generation and fine-tuning
+- KAI detects programming requests and switches to a coding-focused system prompt.
+- Fine-tuning entry point: `training/finetune_qwen3_code.py`.
+- `training/` contains a local PEFT/LoRA fine-tuning pipeline for Qwen3-0.6B.
+- The browser uses upstream Qwen3 ONNX until a locally trained adapter is evaluated, merged, exported and converted to a browser-ready ONNX package.
+- The tiny example JSONL is only a data-format smoke test, not a production-quality corpus.
 
-The research handler is a Node server endpoint; a static GitHub Pages deployment alone cannot execute it. It must be hosted by a compatible Node backend and the HAxBRO frontend must route `/api/kai/search` to that backend. No AI-provider API key is used by this flow.
+## Verification
+Run `npm test` for repository tests. The GitHub Actions workflow `Qwen3 0.6B local inference verification` downloads the ONNX model on a hosted runner and verifies model initialization, a non-empty HAxBRO chat reply, and JavaScript code generation. CI does not prove performance on every phone or laptop; browser-specific installation and inference must also be tested in the deployed workspace.
+
+## Existing first-party modules
+The `kai51/` modules retain HAxBRO's deterministic App Maker, decoder, capability registry and browser-local memory. They are supporting tools, not substitutes for the learned Qwen3 language model.
+
+## Fine-tuning boundary
+See `training/README.md`. Actual training, evaluation, adapter merge and ONNX export require local compute and a real licensed dataset. Do not describe the model as fine-tuned until those steps complete.

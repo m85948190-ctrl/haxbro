@@ -1,0 +1,32 @@
+name: Qwen3 0.6B local inference verification
+on:
+  workflow_dispatch:
+  push:
+    branches: ["qwen3-06b-local-kai"]
+    paths:
+      - "kai51/qwen-chat.js"
+      - "scripts/test-qwen3-inference.mjs"
+      - "package.json"
+      - ".github/workflows/qwen3-runtime-test.yml"
+permissions:
+  contents: read
+jobs:
+  real-model-inference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Transformers.js
+        run: npm install --no-audit --no-fund
+      - name: Cache downloaded Qwen3 weights
+        uses: actions/cache@v4
+        with:
+          path: .cache/huggingface
+          key: qwen3-06b-onnx-q4-${{ runner.os }}-v1
+      - name: Load Qwen3 and verify real chat plus code generation
+        env:
+          HF_HOME: .cache/huggingface
+        run: node scripts/test-qwen3-inference.mjs
