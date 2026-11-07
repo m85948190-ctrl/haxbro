@@ -32,4 +32,7 @@ button,input,textarea,select{font:inherit}button{cursor:pointer}button:disabled{
 <section id="appmaker" class="panel hidden" style="margin-top:16px"><h2>App Maker</h2><p class="sub">Intent → Architect → Build → Test → Preview. This compiler runs locally in the browser.</p><div class="composer"><textarea id="appPrompt" rows="1" placeholder="Build a calculator called QuickCalc"></textarea><button id="build" class="primary">Build app</button></div><div id="buildResult" class="result" style="margin-top:12px"></div><iframe id="preview" class="preview hidden" sandbox="allow-scripts"></iframe></section>
 <div class="footer">HAxBRO AI · made by Mainak, an independent developer · Model status is verified at runtime, not inferred from a progress badge.</div>
 </main>
-<script type="module">\nimport { initKAIChat } from "./kai51/qwen-chat.js";\ninitKAIChat();\n</script></body></html>
+<script type="module">
+import { initKAIChat } from "./kai51/qwen-chat.js";
+initKAIChat();
+</script></body></html>
