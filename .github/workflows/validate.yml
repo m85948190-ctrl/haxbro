@@ -15,15 +15,17 @@ jobs:
       - run: node --check kai51/capabilities.js
       - run: node --check kai51/decoder.js
       - run: node --check kai51/app-maker.js
+      - run: node --check kai51/qwen-chat.js
       - run: test -f index.html
-      - run: grep -q 'externalModel:false' kai51/first-party-core.js
-      - name: Syntax-check browser inference script
+      - run: grep -q 'Qwen3-0.6B' index.html
+      - run: grep -q 'onnx-community/Qwen3-0.6B-ONNX' kai51/qwen-chat.js
+      - run: grep -q 'api/kai/search' kai51/qwen-chat.js
+      - run: grep -q 'training/finetune_qwen3_code.py' README.md
+      - name: Syntax-check browser entry module
         run: |
-          node --input-type=module -e 'import fs from "node:fs"; const html=fs.readFileSync("index.html","utf8"); const a=html.indexOf("<script"); const start=html.indexOf(">",a)+1; const b=html.lastIndexOf("</script>"); if(a<0||start<=0||b<start) throw new Error("Inline app script missing"); fs.writeFileSync("/tmp/haxbro-index-script.mjs",html.slice(start,b));'
+          node --input-type=module -e 'import fs from "node:fs"; const html=fs.readFileSync("index.html","utf8"); const m=html.match(/<script type="module">([\s\S]*?)<\/script>/); if(!m) throw new Error("Inline module entry missing"); fs.writeFileSync("/tmp/haxbro-index-script.mjs",m[1]);'
           node --check /tmp/haxbro-index-script.mjs
-      - name: Assert actual neural model lanes
+      - name: Verify no obsolete Gemma UI references
         run: |
-          grep -q 'onnx-community/SmolLM2-135M-Instruct-ONNX' index.html
-          grep -q 'HuggingFaceTB/SmolLM2-360M-Instruct' index.html
-          grep -q 'which==="lite"||shouldSearch(q)' index.html
-          ! grep -q 'modelId="haxbro-ai-model"' index.html
+          ! grep -q 'Gemma 3 1B' index.html
+          ! grep -q 'gemma-webgpu' index.html
