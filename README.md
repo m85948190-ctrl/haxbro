@@ -16,6 +16,7 @@ HAxBRO's browser-local AI workspace. The active conversational model is Qwen3-0.
 
 ## Code generation and fine-tuning
 - KAI detects programming requests and switches to a coding-focused system prompt.
+- Fine-tuning entry point: `training/finetune_qwen3_code.py`.
 - `training/` contains a local PEFT/LoRA fine-tuning pipeline for Qwen3-0.6B.
 - The browser uses upstream Qwen3 ONNX until a locally trained adapter is evaluated, merged, exported and converted to a browser-ready ONNX package.
 - The tiny example JSONL is only a data-format smoke test, not a production-quality corpus.
