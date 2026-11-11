@@ -49,6 +49,14 @@ export function initKAIChat(){
  const needsCode=q=>/\b(write|generate|build|create|debug|fix|refactor|explain|make)\b.{0,65}\b(code|program|script|function|class|javascript|typescript|python|html|css|sql|api|react|node|website|web page|app)\b|\b(code generator|coding help|programming help|debug this|write code|python|html|css|javascript|typescript)\b/i.test(q);
  function detectMath(q){
   const raw=String(q||"").trim();
+  const natural=raw.match(/^(?:add|sum of|what is|calculate)\s+([0-9]+(?:\.[0-9]+)?)\s+(?:and|plus)\s+([0-9]+(?:\.[0-9]+)?)\s*[?!.]*$/i);
+  if(natural)return {operation:"evaluate",expression:natural[1]+"+"+natural[2]};
+  const subtract=raw.match(/^subtract\s+([0-9]+(?:\.[0-9]+)?)\s+from\s+([0-9]+(?:\.[0-9]+)?)\s*[?!.]*$/i);
+  if(subtract)return {operation:"evaluate",expression:subtract[2]+"-"+subtract[1]};
+  const multiply=raw.match(/^(?:multiply|times)\s+([0-9]+(?:\.[0-9]+)?)\s+(?:by|and)\s+([0-9]+(?:\.[0-9]+)?)\s*[?!.]*$/i);
+  if(multiply)return {operation:"evaluate",expression:multiply[1]+"*"+multiply[2]};
+  const divide=raw.match(/^divide\s+([0-9]+(?:\.[0-9]+)?)\s+by\s+([0-9]+(?:\.[0-9]+)?)\s*[?!.]*$/i);
+  if(divide)return {operation:"evaluate",expression:divide[1]+"/"+divide[2]};
   const equation=raw.match(/(?:solve|find x|find y|solve for [a-z])\s*[: ]*([a-zA-Z0-9_+\-*/^().%\s]+=[a-zA-Z0-9_+\-*/^().%\s]+)/i);
   if(equation)return {operation:"solve",expression:equation[1].trim()};
   if(/\b(simplify|differentiate|derivative)\b/i.test(raw)){
