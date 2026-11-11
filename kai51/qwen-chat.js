@@ -15,7 +15,7 @@ export function initKAIChat(){
   const start=answer.indexOf(fence);if(start<0)return;
   const lang=answer.slice(start+3).match(/^([a-zA-Z]+)?/);if(lang&&lang[1]&&lang[1].toLowerCase()!=="html")return;
   const bodyStart=answer.indexOf("\n",start)+1,end=answer.indexOf(fence,bodyStart);if(end<0)return;
-  const html=answer.slice(bodyStart,end).trim();if(!/<\\s*html|<\\s*(div|main|section|body|!doctype)/i.test(html))return;
+  const html=answer.slice(bodyStart,end).trim();if(!/<\s*html|<\s*(div|main|section|body|!doctype)/i.test(html))return;
   const button=document.createElement("button");button.className="secondary";button.textContent="Preview HTML";
   const frame=document.createElement("iframe");frame.className="preview hidden";frame.setAttribute("sandbox","allow-scripts");
   button.onclick=()=>{frame.srcdoc=html;frame.classList.toggle("hidden");button.textContent=frame.classList.contains("hidden")?"Preview HTML":"Hide preview"};
@@ -43,21 +43,21 @@ export function initKAIChat(){
  }
  const needsWeb=q=>{
   const l=q.toLowerCase().trim();
-  if(needsCode(q)||detectMath(q)||/^(hi|hello|hey|thanks|thank you|good morning|good night)\\b/.test(l))return false;
-  return /\\b(search (the )?web|search online|look up online|find sources|browse the web|latest|today|right now|current|news|breaking|verify online|fact.?check|web research|sources for|according to wikipedia|who is|who was|what is|what are|what was|when did|when is|where is|where are|why does|why is|how does|how do|define|explain|compare|versus|vs\\.)\\b/i.test(q);
+  if(needsCode(q)||detectMath(q)||/^(hi|hello|hey|thanks|thank you|good morning|good night)\b/.test(l))return false;
+  return /\b(search (the )?web|search online|look up online|find sources|browse the web|latest|today|right now|current|news|breaking|verify online|fact.?check|web research|sources for|according to wikipedia|who is|who was|what is|what are|what was|when did|when is|where is|where are|why does|why is|how does|how do|define|explain|compare|versus|vs\.)\b/i.test(q);
  };
- const needsCode=q=>/\\b(write|generate|build|create|debug|fix|refactor|explain|make)\\b.{0,65}\\b(code|program|script|function|class|javascript|typescript|python|html|css|sql|api|react|node|website|web page|app)\\b|\\b(code generator|coding help|programming help|debug this|write code|python|html|css|javascript|typescript)\\b/i.test(q);
+ const needsCode=q=>/\b(write|generate|build|create|debug|fix|refactor|explain|make)\b.{0,65}\b(code|program|script|function|class|javascript|typescript|python|html|css|sql|api|react|node|website|web page|app)\b|\b(code generator|coding help|programming help|debug this|write code|python|html|css|javascript|typescript)\b/i.test(q);
  function detectMath(q){
   const raw=String(q||"").trim();
-  const equation=raw.match(/(?:solve|find x|find y|solve for [a-z])\\s*[: ]*([a-zA-Z0-9_+\\-*/^().%\\s]+=[a-zA-Z0-9_+\\-*/^().%\\s]+)/i);
+  const equation=raw.match(/(?:solve|find x|find y|solve for [a-z])\s*[: ]*([a-zA-Z0-9_+\-*/^().%\s]+=[a-zA-Z0-9_+\-*/^().%\s]+)/i);
   if(equation)return {operation:"solve",expression:equation[1].trim()};
-  if(/\\b(simplify|differentiate|derivative)\\b/i.test(raw)){
-   const m=raw.match(/(?:simplify|differentiate|derivative(?: of)?)\\s*[: ]*([a-zA-Z0-9_+\\-*/^().%\\s]+)/i);
+  if(/\b(simplify|differentiate|derivative)\b/i.test(raw)){
+   const m=raw.match(/(?:simplify|differentiate|derivative(?: of)?)\s*[: ]*([a-zA-Z0-9_+\-*/^().%\s]+)/i);
    if(m)return {operation:/differentiate|derivative/i.test(raw)?"derivative":"simplify",expression:m[1].trim()};
   }
-  let candidate=raw.replace(/^(what is|calculate|compute|sum of|add|please calculate)\\s*/i,"").replace(/[?]+$/,"").trim();
-  if(/[+*/^%]/.test(candidate)||/\\d\\s-\\s\\d/.test(candidate)){
-   if(/^[0-9+\\-*/^().,%\\s]+$/.test(candidate)&&/\\d/.test(candidate))return {operation:"evaluate",expression:candidate};
+  let candidate=raw.replace(/^(what is|calculate|compute|sum of|add|please calculate)\s*/i,"").replace(/[?]+$/,"").trim();
+  if(/[+*/^%-]/.test(candidate)){
+   if(/^[0-9+\-*/^().,%\s]+$/.test(candidate)&&/\d/.test(candidate))return {operation:"evaluate",expression:candidate};
   }
   return null;
  }
