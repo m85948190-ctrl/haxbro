@@ -1,1 +1,15 @@
-{"name":"haxbro-ai-core","private":true,"type":"module","scripts":{"test":"node --test"},"dependencies":{"@huggingface/transformers":"^4.3.0"}}
+{
+  "name": "haxbro-ai-core",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node render-server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^4.3.0"
+  }
+}
