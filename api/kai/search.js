@@ -1,17 +1,111 @@
 export const config = { runtime: "nodejs", maxDuration: 15 };
+
 const clean=(v,n=600)=>String(v??"").replace(/[\u0000-\u001f]/g," ").replace(/\s+/g," ").trim().slice(0,n);
 const decodeEntities=s=>String(s||"").replace(/&amp;/gi,"&").replace(/&quot;/gi,'"').replace(/&#39;|&apos;/gi,"'").replace(/&lt;/gi,"<").replace(/&gt;/gi,">").replace(/&nbsp;/gi," ").replace(/&#(\d+);/g,(_,n)=>String.fromCodePoint(Math.min(0x10ffff,Number(n)||0))).replace(/&#x([0-9a-f]+);/gi,(_,n)=>String.fromCodePoint(Math.min(0x10ffff,parseInt(n,16)||0)));
-const strip=s=>decodeEntities(String(s||"").replace(/<!--[\s\S]*?-->/g," ").replace(/<(script|style|svg|noscript|template|nav|footer|header|form|aside)[^>]*>[\s\S]*?<\/\1>/gi," ").replace(/<[^>]+>/g," ")).replace(/\s+/g," ").trim();
+const strip=s=>decodeEntities(String(s||"").replace(/<!\[CDATA\[|\]\]>/g,"").replace(/<!--[\s\S]*?-->/g," ").replace(/<(script|style|svg|noscript|template|nav|footer|header|form|aside)[^>]*>[\s\S]*?<\/\1>/gi," ").replace(/<[^>]+>/g," ")).replace(/\s+/g," ").trim();
 const STOP=new Set(["what","when","where","which","who","whom","why","how","was","were","are","is","the","and","for","with","from","into","about","tell","give","short","answer","please","explain","sources","source","find","search","latest","today","current","does","did","can","could","would","should","this","that","these","those"]);
 const terms=q=>clean(q).toLowerCase().split(/[^a-z0-9]+/).filter(x=>x.length>2&&!STOP.has(x));
-function rank(items,q){const ts=terms(q);return(items||[]).map((x,i)=>{const title=String(x.title||"").toLowerCase(),hay=(title+" "+String(x.url||"")+" "+String(x.snippet||x.text||"")).toLowerCase(),hits=ts.filter(t=>hay.includes(t)).length,titleHits=ts.filter(t=>title.includes(t)).length;return{...x,_score:hits+titleHits*2,_order:i}}).sort((a,b)=>b._score-a._score||a._order-b._order).slice(0,12).map(({_score,_order,...x})=>x)}
-function safePublicUrl(value){try{const u=new URL(value);if(u.protocol!=="https:"||u.username||u.password||u.port)return null;const h=u.hostname.toLowerCase();if(h==="localhost"||h.endsWith(".localhost")||h.endsWith(".local")||h.endsWith(".internal")||/^(127\.|10\.|192\.168\.|169\.254\.)/.test(h)||/^172\.(1[6-9]|2\d|3[01])\./.test(h)||h==="::1"||h.startsWith("fc")||h.startsWith("fd"))return null;return u}catch{return null}}
-async function get(value,ms=4200,accept="text/html,application/json"){let current=safePublicUrl(value);if(!current)throw new Error("Unsafe URL blocked");const c=new AbortController(),timer=setTimeout(()=>c.abort(),ms);try{for(let hop=0;hop<4;hop++){const r=await fetch(current.toString(),{signal:c.signal,redirect:"manual",headers:{"user-agent":"HAxBRO-KAI/1.1","accept":accept}});if(r.status>=300&&r.status<400){const location=r.headers.get("location");if(!location)throw new Error("Redirect without location");current=safePublicUrl(new URL(location,current).toString());if(!current)throw new Error("Unsafe redirect blocked");continue}if(!r.ok)throw new Error("HTTP "+r.status);return{text:(await r.text()).slice(0,1500000),status:r.status,url:current.toString(),contentType:r.headers.get("content-type")||""}}throw new Error("Too many redirects")}finally{clearTimeout(timer)}}
-function resultUrl(raw,base){let value=decodeEntities(raw||"");try{if(value.startsWith("//"))value="https:"+value;if(value.startsWith("/url?")||value.startsWith("/url/")){const u=new URL(value,"https://www.google.com");value=u.searchParams.get("q")||u.searchParams.get("url")||value}if(/^https?:/i.test(value)){const absolute=new URL(value);if(/(^|\.)google\.com$/i.test(absolute.hostname)&&absolute.pathname==="/url")value=absolute.searchParams.get("q")||absolute.searchParams.get("url")||value}if(value.startsWith("/l/?")||value.includes("uddg=")){const u=new URL(value,"https://duckduckgo.com");value=u.searchParams.get("uddg")||u.searchParams.get("url")||value}if(!/^https?:/i.test(value))return null;return safePublicUrl(new URL(value,base).toString())}catch{return null}}
-async function google(q){const{ text:html }=await get("https://www.google.com/search?gbv=1&hl=en&q="+encodeURIComponent(q));const out=[],re=/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;let m;while((m=re.exec(html))&&out.length<12){const node=(m[2].match(/<h3[^>]*>([\s\S]*?)<\/h3>/i)||[])[1];if(!node)continue;const u=resultUrl(m[1],"https://www.google.com"),title=clean(strip(node),200);if(!u||!title||/google\./i.test(u.hostname))continue;const ctx=html.slice(Math.max(0,m.index-350),Math.min(html.length,re.lastIndex+650));out.push({title,url:u.toString(),snippet:clean(strip(ctx),650),engine:"Google"})}return out}
-async function bing(q){const{ text:html }=await get("https://www.bing.com/search?q="+encodeURIComponent(q));const out=[],re=/<h2[^>]*>\s*<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>\s*<\/h2>/gi;let m;while((m=re.exec(html))&&out.length<12){const u=resultUrl(m[1],"https://www.bing.com"),title=clean(strip(m[2]),200);if(!u||!title||/bing\./i.test(u.hostname))continue;const ctx=html.slice(Math.max(0,m.index-250),Math.min(html.length,re.lastIndex+650));out.push({title,url:u.toString(),snippet:clean(strip(ctx),650),engine:"Bing"})}return out}
-async function duckduckgo(q){const{ text:html }=await get("https://html.duckduckgo.com/html/?q="+encodeURIComponent(q));const out=[],re=/<a\b([^>]*)>([\s\S]*?)<\/a>/gi;let m;while((m=re.exec(html))&&out.length<12){if(!/\bresult__a\b/.test(m[1]))continue;const href=(m[1].match(/\bhref=["']([^"']+)["']/i)||[])[1];const u=resultUrl(href,"https://html.duckduckgo.com"),title=clean(strip(m[2]),200);if(!u||!title||/duckduckgo\./i.test(u.hostname))continue;const ctx=html.slice(Math.max(0,m.index-200),Math.min(html.length,re.lastIndex+700));out.push({title,url:u.toString(),snippet:clean(strip(ctx),650),engine:"DuckDuckGo"})}return out}
-async function wiki(q){const api="https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch="+encodeURIComponent(q)+"&format=json&origin=*&srlimit=5";const{ text:raw }=await get(api,4200,"application/json");const data=JSON.parse(raw);return(data?.query?.search||[]).slice(0,5).map(x=>({title:clean(x.title,180),url:"https://en.wikipedia.org/wiki/"+encodeURIComponent(String(x.title||"").replace(/ /g,"_")),snippet:clean(strip(x.snippet||""),900),engine:"Wikipedia"}))}
-function pageText(html){const title=clean(strip((String(html).match(/<title[^>]*>([\s\S]*?)<\/title>/i)||[])[1]||""),220);const candidates=[...String(html).matchAll(/<(main|article)[^>]*>([\s\S]*?)<\/\1>/gi)].map(x=>x[2]).sort((a,b)=>b.length-a.length);const body=candidates[0]||((String(html).match(/<body[^>]*>([\s\S]*?)<\/body>/i)||[])[1]||html);return{title,text:clean(strip(body),3200)}}
-async function scrape(source){const safe=safePublicUrl(source.url);if(!safe)return{...source,readStatus:"blocked",readError:"Only public HTTPS pages can be read."};try{const page=await get(safe.toString(),4600,"text/html,application/xhtml+xml,text/plain;q=0.8,*/*;q=0.5");let extracted;if(/text\/plain/i.test(page.contentType))extracted={title:source.title,text:clean(page.text,3200)};else if(/html|xhtml/i.test(page.contentType)||!page.contentType)extracted=pageText(page.text);else return{...source,readStatus:"unsupported",readError:"The page did not return readable text.",snippet:source.snippet||""};if(extracted.text.length<100)return{...source,readStatus:"thin",readError:"The page exposed too little readable text.",snippet:source.snippet||""};return{...source,title:extracted.title||source.title,url:page.url,text:extracted.text,readStatus:"read",contentLength:extracted.text.length}}catch(e){return{...source,readStatus:"failed",readError:clean(e?.message||e,180),snippet:source.snippet||""}}}
-export default async function handler(req,res){res.setHeader("Cache-Control","public, s-maxage=60, stale-while-revalidate=180");if(req.method!=="GET"&&req.method!=="POST"){res.setHeader("Allow","GET, POST");return res.status(405).json({ok:false,error:"Method not allowed"})}let q="";try{q=clean(req.method==="POST"?(req.body?.query||req.body?.message):(req.query?.q||req.query?.query),500)}catch{}if(!q)return res.status(400).json({ok:false,error:"Provide a query."});const jobs=[["Google",google],["Bing",bing],["DuckDuckGo",duckduckgo],["Wikipedia",wiki]],settled=await Promise.allSettled(jobs.map(([,fn])=>fn(q))),searched=[],engineErrors=[],all=[];for(let i=0;i<settled.length;i++){const r=settled[i];if(r.status==="fulfilled"){searched.push(jobs[i][0]);all.push(...r.value)}else engineErrors.push({engine:jobs[i][0],error:clean(r.reason?.message||"Search failed",140)})}const ranked=rank(all,q),unique=ranked.filter((x,i,a)=>a.findIndex(y=>y.url===x.url)===i).slice(0,8),sources=await Promise.all(unique.slice(0,6).map(scrape)),numbered=sources.map((s,i)=>({...s,sourceNumber:i+1})),readCount=numbered.filter(s=>s.readStatus==="read").length,relevant=numbered.some(s=>(s.readStatus==="read"?s.text:s.snippet||"").length>100);return res.status(200).json({ok:true,query:q,engine:searched.join(" + ")||"none",searched,engineErrors,sources:numbered,relevant,answerable:relevant,research:{searchedCount:unique.length,readCount,failedCount:numbered.length-readCount,mode:"multi-engine-search-open-extract"},warning:relevant?null:"No readable relevant source was found. KAI should not invent an answer from unrelated search results."})}
+function rank(items,q){
+ const ts=terms(q);
+ return(items||[]).map((x,i)=>{const title=String(x.title||"").toLowerCase(),hay=(title+" "+String(x.url||"")+" "+String(x.snippet||x.text||"")).toLowerCase(),hits=ts.filter(t=>hay.includes(t)).length,titleHits=ts.filter(t=>title.includes(t)).length;return{...x,_score:hits+titleHits*2,_order:i}})
+ .filter(x=>ts.length===0||x._score>0).sort((a,b)=>b._score-a._score||a._order-b._order).slice(0,16).map(({_score,_order,...x})=>x);
+}
+function safePublicUrl(value){
+ try{const u=new URL(value);if(u.protocol!=="https:"||u.username||u.password||u.port)return null;const h=u.hostname.toLowerCase();
+ if(h==="localhost"||h.endsWith(".localhost")||h.endsWith(".local")||h.endsWith(".internal")||/^(127\.|10\.|192\.168\.|169\.254\.)/.test(h)||/^172\.(1[6-9]|2\d|3[01])\./.test(h)||h==="::1"||h.startsWith("fc")||h.startsWith("fd"))return null;
+ return u}catch{return null}
+}
+async function get(value,ms=4200,accept="text/html,application/json"){
+ let current=safePublicUrl(value);if(!current)throw new Error("Unsafe URL blocked");
+ const c=new AbortController(),timer=setTimeout(()=>c.abort(),ms);
+ try{for(let hop=0;hop<4;hop++){const r=await fetch(current.toString(),{signal:c.signal,redirect:"manual",headers:{"user-agent":"Mozilla/5.0 (compatible; HAxBRO-KAI/1.2; +https://github.com/m85948190-ctrl/haxbro)","accept":accept}});
+ if(r.status>=300&&r.status<400){const location=r.headers.get("location");if(!location)throw new Error("Redirect without location");current=safePublicUrl(new URL(location,current).toString());if(!current)throw new Error("Unsafe redirect blocked");continue}
+ if(!r.ok)throw new Error("HTTP "+r.status);return{text:(await r.text()).slice(0,1500000),status:r.status,url:current.toString(),contentType:r.headers.get("content-type")||""}}
+ throw new Error("Too many redirects")}finally{clearTimeout(timer)}
+}
+function resultUrl(raw,base){
+ let value=decodeEntities(raw||"");
+ try{if(value.startsWith("//"))value="https:"+value;
+ if(value.startsWith("/url?")||value.startsWith("/url/")){const u=new URL(value,"https://www.google.com");value=u.searchParams.get("q")||u.searchParams.get("url")||value}
+ if(/^https?:/i.test(value)){const absolute=new URL(value);if(/(^|\.)google\.com$/i.test(absolute.hostname)&&absolute.pathname==="/url")value=absolute.searchParams.get("q")||absolute.searchParams.get("url")||value}
+ if(value.startsWith("/l/?")||value.includes("uddg=")){const u=new URL(value,"https://duckduckgo.com");value=u.searchParams.get("uddg")||u.searchParams.get("url")||value}
+ if(!/^https?:/i.test(value))return null;return safePublicUrl(new URL(value,base).toString())}catch{return null}
+}
+async function google(q){
+ const{ text:html }=await get("https://www.google.com/search?gbv=1&hl=en&q="+encodeURIComponent(q));
+ const out=[],re=/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;let m;
+ while((m=re.exec(html))&&out.length<12){const node=(m[2].match(/<h3[^>]*>([\s\S]*?)<\/h3>/i)||[])[1];if(!node)continue;
+ const u=resultUrl(m[1],"https://www.google.com"),title=clean(strip(node),200);if(!u||!title||/google\./i.test(u.hostname))continue;
+ const ctx=html.slice(Math.max(0,m.index-350),Math.min(html.length,re.lastIndex+650));out.push({title,url:u.toString(),snippet:clean(strip(ctx),650),engine:"Google"})}
+ if(!out.length)throw new Error("Google returned no parseable organic results");return out;
+}
+async function bing(q){
+ try{
+  const{ text:xml }=await get("https://www.bing.com/search?format=rss&q="+encodeURIComponent(q),4200,"application/rss+xml,application/xml,text/xml");
+  const out=[],items=xml.match(/<item\b[^>]*>[\s\S]*?<\/item>/gi)||[];
+  for(const item of items){const title=clean(strip((item.match(/<title[^>]*>([\s\S]*?)<\/title>/i)||[])[1]||""),200),link=strip((item.match(/<link[^>]*>([\s\S]*?)<\/link>/i)||[])[1]||""),snippet=clean(strip((item.match(/<description[^>]*>([\s\S]*?)<\/description>/i)||[])[1]||""),650),u=resultUrl(link,"https://www.bing.com");
+   if(u&&title)out.push({title,url:u.toString(),snippet,engine:"Bing"})}
+  if(out.length)return out.slice(0,12);
+ }catch{}
+ const{ text:html }=await get("https://www.bing.com/search?q="+encodeURIComponent(q));
+ const out=[],re=/<h2[^>]*>\s*<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>\s*<\/h2>/gi;let m;
+ while((m=re.exec(html))&&out.length<12){const u=resultUrl(m[1],"https://www.bing.com"),title=clean(strip(m[2]),200);if(!u||!title||/bing\./i.test(u.hostname))continue;
+ const ctx=html.slice(Math.max(0,m.index-250),Math.min(html.length,re.lastIndex+650));out.push({title,url:u.toString(),snippet:clean(strip(ctx),650),engine:"Bing"})}
+ if(!out.length)throw new Error("Bing returned no parseable organic results");return out;
+}
+async function duckduckgo(q){
+ let html="",base="https://html.duckduckgo.com";
+ try{html=(await get(base+"/html/?q="+encodeURIComponent(q))).text}catch{base="https://lite.duckduckgo.com";html=(await get(base+"/lite/?q="+encodeURIComponent(q))).text}
+ const out=[],re=/<a\b([^>]*)>([\s\S]*?)<\/a>/gi;let m;
+ while((m=re.exec(html))&&out.length<12){
+  if(!/\b(result__a|result-link)\b/i.test(m[1]))continue;
+  const href=(m[1].match(/\bhref=["']([^"']+)["']/i)||[])[1],u=resultUrl(href,base),title=clean(strip(m[2]),200);
+  if(!u||!title||/duckduckgo\./i.test(u.hostname))continue;
+  const ctx=html.slice(Math.max(0,m.index-250),Math.min(html.length,re.lastIndex+750));
+  out.push({title,url:u.toString(),snippet:clean(strip(ctx),650),engine:"DuckDuckGo"});
+ }
+ if(!out.length)throw new Error("DuckDuckGo returned no parseable organic results");return out;
+}
+async function wiki(q){
+ const api="https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch="+encodeURIComponent(q)+"&format=json&origin=*&srlimit=8";
+ const{ text:raw }=await get(api,4200,"application/json");const data=JSON.parse(raw);
+ return(data?.query?.search||[]).slice(0,8).map(x=>({title:clean(x.title,180),url:"https://en.wikipedia.org/wiki/"+encodeURIComponent(String(x.title||"").replace(/ /g,"_")),snippet:clean(strip(x.snippet||""),900),engine:"Wikipedia"}));
+}
+function pageText(html){
+ const title=clean(strip((String(html).match(/<title[^>]*>([\s\S]*?)<\/title>/i)||[])[1]||""),220);
+ const candidates=[...String(html).matchAll(/<(main|article)[^>]*>([\s\S]*?)<\/\1>/gi)].map(x=>x[2]).sort((a,b)=>b.length-a.length);
+ const body=candidates[0]||((String(html).match(/<body[^>]*>([\s\S]*?)<\/body>/i)||[])[1]||html);
+ return{title,text:clean(strip(body),4200)};
+}
+async function scrape(source){
+ const safe=safePublicUrl(source.url);if(!safe)return{...source,readStatus:"blocked",readError:"Only public HTTPS pages can be read."};
+ try{
+  const page=await get(safe.toString(),4600,"text/html,application/xhtml+xml,text/plain;q=0.8,*/*;q=0.5");
+  let extracted;if(/text\/plain/i.test(page.contentType))extracted={title:source.title,text:clean(page.text,4200)};
+  else if(/html|xhtml/i.test(page.contentType)||!page.contentType)extracted=pageText(page.text);
+  else return{...source,readStatus:"unsupported",readError:"The page did not return readable text.",snippet:source.snippet||""};
+  if(extracted.text.length<100)return{...source,readStatus:"thin",readError:"The page exposed too little readable text.",snippet:source.snippet||""};
+  return{...source,title:extracted.title||source.title,url:page.url,domain:new URL(page.url).hostname,text:extracted.text,readStatus:"read",contentLength:extracted.text.length};
+ }catch(e){return{...source,domain:safe.hostname,readStatus:"failed",readError:clean(e?.message||e,180),snippet:source.snippet||""}}
+}
+export default async function handler(req,res){
+ res.setHeader("Cache-Control","no-store");
+ if(req.method!=="GET"&&req.method!=="POST"){res.setHeader("Allow","GET, POST");return res.status(405).json({ok:false,error:"Method not allowed"})}
+ let q="";try{q=clean(req.method==="POST"?(req.body?.query||req.body?.message):(req.query?.q||req.query?.query),500)}catch{}
+ if(!q)return res.status(400).json({ok:false,error:"Provide a query."});
+ const jobs=[["Google",google],["Bing",bing],["DuckDuckGo",duckduckgo],["Wikipedia",wiki]];
+ const settled=await Promise.allSettled(jobs.map(([,fn])=>fn(q))),searched=[],engineErrors=[],all=[];
+ for(let i=0;i<settled.length;i++){const r=settled[i];if(r.status==="fulfilled"){searched.push(jobs[i][0]);all.push(...r.value)}else engineErrors.push({engine:jobs[i][0],error:clean(r.reason?.message||"Search failed",140)})}
+ const ranked=rank(all,q),seen=new Set(),unique=[];
+ for(const item of ranked){const key=String(item.url||"").replace(/#.*$/,"").replace(/\/$/,"");if(!key||seen.has(key))continue;seen.add(key);unique.push(item);if(unique.length>=8)break}
+ const sources=await Promise.all(unique.slice(0,6).map(scrape));
+ const numbered=sources.map((s,i)=>({...s,sourceNumber:i+1}));
+ const readable=numbered.filter(s=>s.readStatus==="read"),domains=new Set(readable.map(s=>s.domain||new URL(s.url).hostname));
+ const answerable=readable.length>=2&&domains.size>=2;
+ return res.status(200).json({
+  ok:true,query:q,engine:searched.join(" + ")||"none",searched,engineErrors,sources:numbered,
+  relevant:answerable,answerable,
+  research:{resultCount:unique.length,readCount:readable.length,failedCount:numbered.length-readable.length,independentDomains:domains.size,mode:"multi-engine-search-open-extract"},
+  warning:answerable?null:"KAI could not verify this query from at least two independently hosted readable pages. It must not invent an answer or citations."
+ });
+}
