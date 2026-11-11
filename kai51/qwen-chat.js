@@ -94,7 +94,8 @@ export function initKAIChat(){
   const q=clean(prompt.value,2500);if(!q||send.disabled)return;prompt.value="";prompt.style.height="44px";send.disabled=true;send.textContent="…";
   bubble("YOU",q);const reply=bubble("KAI 51","Preparing local Qwen3…"),out=reply.lastChild;
   try{
-   const mathTask=detectMath(q);
+   const priorMath=[...history].reverse().find(x=>x.role==="user"&&detectMath(x.content));
+   const mathTask=detectMath(q)||(/\\b(sum|calculate it|do the math|add them|solve it)\\b/i.test(q)&&priorMath?detectMath(priorMath.content):null);
    if(mathTask){
     setStatus("calculating exactly");
     const result=await runMathTool(mathTask.expression,mathTask.operation);
