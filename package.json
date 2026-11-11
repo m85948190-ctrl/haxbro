@@ -7,7 +7,7 @@
   },
   "scripts": {
     "start": "node render-server.js",
-    "test": "node --test"
+    "test": "node --check kai51/qwen-chat.js && node --check api/kai/search.js && node --check api/tools/math.js && node --test"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.3.0",

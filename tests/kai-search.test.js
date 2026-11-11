@@ -53,3 +53,28 @@ test("research endpoint rejects an empty query", async () => {
   assert.equal(res.code, 400);
   assert.equal(res.body.ok, false);
 });
+
+
+test("DuckDuckGo is a working fallback when the other search engines fail", async () => {
+  const originalFetch = globalThis.fetch;
+  const article = "<html><body><main><h1>Quantum battery storage</h1><p>Quantum battery research studies how quantum effects may influence energy storage and charging. Researchers investigate collective charging, coherence, and potential limits on charging power.</p></main></body></html>";
+  globalThis.fetch = async (input) => {
+    const url = String(input);
+    if (url.includes("html.duckduckgo.com/html/")) {
+      return response('<a rel="nofollow" class="result__a" href="https://example.org/quantum-battery">Quantum battery storage research</a>');
+    }
+    if (url === "https://example.org/quantum-battery") return response(article);
+    throw new Error("Simulated unavailable engine: " + url);
+  };
+  try {
+    const res = mockResponse();
+    await handler({ method: "GET", query: { q: "quantum battery storage" } }, res);
+    assert.equal(res.code, 200);
+    assert.equal(res.body.ok, true);
+    assert.ok(res.body.searched.includes("DuckDuckGo"));
+    assert.equal(res.body.sources[0].readStatus, "read");
+    assert.match(res.body.sources[0].text, /quantum effects may influence energy storage/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
