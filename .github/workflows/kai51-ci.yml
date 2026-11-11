@@ -1,7 +1,7 @@
 name: KAI 51 CI
 on:
   push:
-    paths: ["kai51/**","creative/**","agent/**","knowledge/**","scripts/**","package.json",".github/workflows/kai51-ci.yml"]
+    paths: ["kai51/**","api/**","tests/**","creative/**","agent/**","knowledge/**","scripts/**","package.json",".github/workflows/kai51-ci.yml"]
   pull_request:
 jobs:
   test:
