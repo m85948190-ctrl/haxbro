@@ -44,5 +44,5 @@ test("calculator rejects executable or unsupported input",async()=>{
 test("quadratic solver keeps roots in arbitrary precision", async () => {
   const res = await run("x^2 - 2 = 0", "solve");
   assert.equal(res.code, 200);
-  assert.match(res.body.result, /x = 1\\.4142135623730950488/);
+  assert.match(res.body.result, /x = 1\.4142135623730950488/);
 });

@@ -15,5 +15,13 @@ console.log("CHAT_SMOKE_TEST:",chat);
 if(!/haxbro|online|ready/i.test(chat))throw new Error("Model loaded but did not return a recognizable HAxBRO chat response.");
 const code=await ask([{role:"system",content:"You are HAxBRO Code. Output a short correct JavaScript function."},{role:"user",content:"Write a JavaScript function named add(a, b) that returns a plus b."}],128);
 console.log("CODE_SMOKE_TEST:",code);
+
+const python=await ask([
+  {role:"system",content:"You are a dedicated Python 3 code writer. Output only correct, runnable Python 3 code. Never use JavaScript."},
+  {role:"user",content:"Write a Python function named factorial(n) that returns n factorial using a loop. Include a check for negative input."}
+],160);
+console.log("PYTHON_CODE_SMOKE_TEST:",python);
+if(!/def\\s+factorial\\s*\\(/i.test(python)||!/return\\s+/i.test(python))throw new Error("Python code generation did not produce a recognizable factorial function.");
+
 if(!/function\s+add|add\s*=\s*\(/i.test(code)||!/return|=>/.test(code))throw new Error("Coding smoke test did not produce a recognizable add function.");
 console.log(JSON.stringify({ok:true,model:modelId,chat_reply_verified:true,code_generation_verified:true,chat_preview:chat.slice(0,240),code_preview:code.slice(0,300)},null,2));
