@@ -10,6 +10,7 @@
     "test": "node --test"
   },
   "dependencies": {
-    "@huggingface/transformers": "^4.3.0"
+    "@huggingface/transformers": "^4.3.0",
+    "mathjs": "^14.8.1"
   }
 }
