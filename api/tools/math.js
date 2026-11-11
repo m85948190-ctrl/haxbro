@@ -12,7 +12,7 @@ function solveEquation(input, variable) {
   const parts = input.split("=");
   if (parts.length !== 2) throw new Error("Write an equation like 2*x + 3 = 11.");
   const left = math.parse(parts[0]), right = math.parse(parts[1]);
-  const expr = math.simplify({ math: "subtract", args: [left, right] });
+  const expr = math.simplify("(" + parts[0] + ")-(" + parts[1] + ")");
   const evaluateAt = n => math.evaluate(expr.toString(), { [variable]: math.bignumber(n) });
   const zero = evaluateAt(0), plus = evaluateAt(1), minus = evaluateAt(-1);
   const two = math.bignumber(2);
