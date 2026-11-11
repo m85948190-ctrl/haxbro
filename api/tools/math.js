@@ -21,11 +21,13 @@ function solveEquation(input, variable) {
   const c2 = math.subtract(math.divide(math.add(plus, minus), two), c0);
   if (!math.isZero(c2)) {
     const discriminant = math.subtract(math.multiply(c1,c1), math.multiply(math.bignumber(4),math.multiply(c2,c0)));
-    const d = Number(discriminant.toString());
-    if (d < 0) return { result: "No real roots.", steps: ["Reduced to a quadratic equation.", "The discriminant is negative."] };
-    const a=Number(c2.toString()), b=Number(c1.toString()), c=Number(c0.toString());
-    const root1=(-b+Math.sqrt(d))/(2*a), root2=(-b-Math.sqrt(d))/(2*a);
-    return { result: root1===root2 ? variable+" = "+root1 : variable+" = "+root1+" or "+root2, steps:["Reduced equation: "+expr.toString()+" = 0","Applied the quadratic formula."] };
+    if (math.smaller(discriminant, math.bignumber(0))) return { result: "No real roots.", steps: ["Reduced to a quadratic equation.", "The discriminant is negative."] };
+    const squareRoot = math.sqrt(discriminant);
+    const denominator = math.multiply(two, c2);
+    const root1 = math.divide(math.add(math.unaryMinus(c1), squareRoot), denominator);
+    const root2 = math.divide(math.subtract(math.unaryMinus(c1), squareRoot), denominator);
+    const same = math.equal(root1, root2);
+    return { result: same ? variable+" = "+format(root1) : variable+" = "+format(root1)+" or "+format(root2), steps:["Reduced equation: "+expr.toString()+" = 0","Applied the quadratic formula using arbitrary-precision values."] };
   }
   if (!math.isZero(c1)) {
     const root=math.divide(math.unaryMinus(c0),c1);
