@@ -1,8 +1,8 @@
 import { create, all } from "mathjs";
 
 const math = create(all, { number: "BigNumber", precision: 100 });
-const clean = (v,n=500) => String(v ?? "").replace(/[\\u0000-\\u001f]/g," ").trim().slice(0,n);
-const allowed = s => /^[0-9a-zA-Z_+\\-*/^().,%\\s=]+$/.test(s) && !/\\b(import|createUnit|evaluate|parse|simplify|derivative|help|expression|assignment)\\b/i.test(s);
+const clean = (v,n=500) => String(v ?? "").replace(/[\u0000-\u001f]/g," ").trim().slice(0,n);
+const allowed = s => /^[0-9a-zA-Z_+\-*/^().,%\s=]+$/.test(s) && !/\b(import|createUnit|evaluate|parse|simplify|derivative|help|expression|assignment)\b/i.test(s);
 
 function format(v) {
   if (v && typeof v.toString === "function") return v.toString();
@@ -11,7 +11,6 @@ function format(v) {
 function solveEquation(input, variable) {
   const parts = input.split("=");
   if (parts.length !== 2) throw new Error("Write an equation like 2*x + 3 = 11.");
-  const left = math.parse(parts[0]), right = math.parse(parts[1]);
   const expr = math.simplify("(" + parts[0] + ")-(" + parts[1] + ")");
   const evaluateAt = n => math.evaluate(expr.toString(), { [variable]: math.bignumber(n) });
   const zero = evaluateAt(0), plus = evaluateAt(1), minus = evaluateAt(-1);
@@ -55,8 +54,7 @@ export default async function handler(req,res) {
       result=math.simplify(expression).toString();steps=["Expression normalized. For full polynomial expansion, use the algebra workspace."];
     } else {
       const value=math.evaluate(expression);
-      if(value && typeof value.toString==="function") result=format(value);
-      else result=JSON.stringify(value);
+      result=format(value);
       steps=["Evaluated using the built-in math engine with arbitrary-precision decimal arithmetic."];
     }
     return res.status(200).json({ok:true,operation,expression,result,steps,engine:"HAxBRO deterministic math engine"});
