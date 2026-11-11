@@ -31,7 +31,7 @@ test("algebra solves linear equations",async()=>{
 test("algebra differentiates polynomials",async()=>{
   const res=await run("x^3 + 2*x","derivative");
   assert.equal(res.code,200);
-  assert.match(res.body.result,/3\\s*\\*?\\s*x\\s*\\^\\s*2/);
+  assert.match(res.body.result,/3\s*\\*?\s*x\s*\\^\s*2/);
 });
 
 test("calculator rejects executable or unsupported input",async()=>{
