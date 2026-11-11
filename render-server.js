@@ -24,7 +24,8 @@ const MIME = {
 const API = new Map([
   ["/api/health", "./api/health.js"],
   ["/api/kai/search", "./api/kai/search.js"],
-  ["/api/kai/chat", "./api/kai/chat.js"]
+  ["/api/kai/chat", "./api/kai/chat.js"],
+  ["/api/tools/math", "./api/tools/math.js"]
 ]);
 const handlers = new Map();
 
