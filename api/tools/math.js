@@ -5,6 +5,7 @@ const clean = (v,n=500) => String(v ?? "").replace(/[\u0000-\u001f]/g," ").trim(
 const allowed = s => /^[0-9a-zA-Z_+\-*/^().,%\s=]+$/.test(s) && !/\b(import|createUnit|evaluate|parse|simplify|derivative|help|expression|assignment)\b/i.test(s);
 
 function format(v) {
+  if (math.isBigNumber(v)) return v.toFixed();
   if (v && typeof v.toString === "function") return v.toString();
   return String(v);
 }
