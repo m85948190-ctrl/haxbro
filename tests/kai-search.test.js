@@ -78,3 +78,36 @@ test("DuckDuckGo is a working fallback when the other search engines fail", asyn
     globalThis.fetch = originalFetch;
   }
 });
+
+
+test("Bing RSS provides real links and two independent readable sources", async () => {
+  const originalFetch = globalThis.fetch;
+  const pages = {
+    "https://example.org/solar-one": "<html><body><main><h1>Solar storage report</h1><p>Solar battery storage allows households and grid operators to save renewable electricity generated during daylight and use it later. Battery systems can improve grid flexibility and reduce reliance on fossil fuel generation during periods of high demand.</p></main></body></html>",
+    "https://research.example.net/solar-two": "<html><body><article><h1>Energy storage research</h1><p>Energy storage technologies help balance variable renewable electricity by shifting generation across time. Lithium-ion batteries are widely deployed, while pumped hydro and flow batteries serve other grid-scale applications.</p></article></body></html>"
+  };
+  globalThis.fetch = async (input) => {
+    const url = String(input);
+    if (url.includes("bing.com/search?format=rss")) {
+      return response(`<?xml version="1.0"?><rss><channel>
+        <item><title>Solar battery storage report</title><link>https://example.org/solar-one</link><description>Solar battery storage and renewable electricity report.</description></item>
+        <item><title>Energy storage research review</title><link>https://research.example.net/solar-two</link><description>Research on grid energy storage and renewable power.</description></item>
+      </channel></rss>`, "application/rss+xml");
+    }
+    if (pages[url]) return response(pages[url]);
+    throw new Error("Simulated unavailable provider: " + url);
+  };
+  try {
+    const res = mockResponse();
+    await handler({ method: "GET", query: { q: "solar battery energy storage" } }, res);
+    assert.equal(res.code, 200);
+    assert.equal(res.body.sources.length, 2);
+    assert.equal(res.body.research.readCount, 2);
+    assert.equal(res.body.research.independentDomains, 2);
+    assert.equal(res.body.answerable, true);
+    assert.equal(res.body.sources[0].readStatus, "read");
+    assert.match(res.body.sources[0].url, /^https:\/\//);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
