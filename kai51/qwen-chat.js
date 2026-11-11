@@ -116,7 +116,7 @@ export function initKAIChat(){
   }catch(e){out.textContent="KAI could not complete the local Qwen3 response: "+clean(e&&e.message||e,400)+". No cloud AI fallback was used.";setStatus("reply failed");hint.textContent="Check model download, browser compatibility and available device memory.";console.error("HAxBRO Qwen3 inference:",e)}
   finally{send.disabled=false;send.textContent="Send ↑";if(document.visibilityState==="visible")prompt.focus()}
  }
- $("#webSearch").onclick=()=>{const q=clean($("#webQuery").value,500);if(!q)return;forceWebNext=true;prompt.value="Search the web for: "+q;void run()};
+ $("#webSearch").onclick=()=>{const q=clean($("#webQuery").value,500);if(!q)return;forceWebNext=true;prompt.value=q;void run()};
  $("#webQuery").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("#webSearch").click()}});
  $("#mathRun").onclick=async()=>{const expression=clean($("#mathExpression").value,500),operation=$("#mathOperation").value,result=$("#mathResult");if(!expression)return;result.classList.remove("hidden");result.textContent="Calculating…";try{const d=await runMathTool(expression,operation);result.textContent=d.result+"\n\n"+(d.steps||[]).join("\n")}catch(e){result.textContent="Math error: "+clean(e.message,220)}};
  $("#mathExpression").addEventListener("keydown",e=>{if(e.key==="Enter")$("#mathRun").click()});
