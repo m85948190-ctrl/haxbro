@@ -21,7 +21,7 @@ const python=await ask([
   {role:"user",content:"Write a Python function named factorial(n) that returns n factorial using a loop. Include a check for negative input."}
 ],160);
 console.log("PYTHON_CODE_SMOKE_TEST:",python);
-if(!/def\\s+factorial\\s*\\(/i.test(python)||!/return\\s+/i.test(python))throw new Error("Python code generation did not produce a recognizable factorial function.");
+if(!/def\s+factorial\s*\(/i.test(python)||!/return\s+/i.test(python))throw new Error("Python code generation did not produce a recognizable factorial function.");
 
 if(!/function\s+add|add\s*=\s*\(/i.test(code)||!/return|=>/.test(code))throw new Error("Coding smoke test did not produce a recognizable add function.");
 console.log(JSON.stringify({ok:true,model:modelId,chat_reply_verified:true,code_generation_verified:true,chat_preview:chat.slice(0,240),code_preview:code.slice(0,300)},null,2));
